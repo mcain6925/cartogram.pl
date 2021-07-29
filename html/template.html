@@ -1,0 +1,45 @@
+<html>
+<meta charset="UTF-8">
+<head>
+<title>Cartogram Pages - Template</title>
+<link rel="stylesheet" type="text/css" href="cartogram.css">
+<link href='https://fonts.googleapis.com/css?family=Noto+Serif:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href='electoral_red_blue.png' rel='icon' type='image/png'>
+<script>
+function include(file) {
+	var request;
+	request = new XMLHttpRequest();
+	request.open("GET", file, false);
+	request.send();
+	document.write(request.responseText);
+}
+</script>
+</head>
+<body>
+
+<div id="header">
+<script> include("header.html"); </script>
+<p style="margin:0 0 0 10px;">
+<hr>
+</div>
+
+<div id="leftnavigation">
+<script> include("left.html"); </script>
+</div>
+
+<div id="content">
+<b><u>Template</u></b>
+<p>
+This template file should never get displayed.
+<p style="clear:both;">
+<br><br>
+<a href=template.html>Next: Template</a>
+
+<br/><br/><br/>
+Last updated Feb 23, 2018<br/>
+<script> include("footer.html"); </script>
+
+</div>
+
+</body>
+</html>

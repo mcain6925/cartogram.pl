@@ -1,0 +1,131 @@
+<html>
+<meta charset="UTF-8">
+<head>
+<title>Cartogram Pages - Introduction</title>
+<link rel="stylesheet" type="text/css" href="cartogram.css">
+<link href='https://fonts.googleapis.com/css?family=Noto+Serif:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href='electoral_red_blue.png' rel='icon' type='image/png'>
+<script>
+function include(file) {
+	var request;
+	request = new XMLHttpRequest();
+	request.open("GET", file, false);
+	request.send();
+	document.write(request.responseText);
+}
+</script>
+</head>
+<body>
+
+<div id="header">
+<script> include("header.html"); </script>
+<p style="margin:0 0 0 10px;">
+<hr>
+</div>
+
+<div id="leftnavigation">
+<script> include("left.html"); </script>
+</div>
+
+<div id="content">
+<b><u>Introduction</u></b>
+<p>
+This site provides background information and
+open-source software that can be used to produce
+cartograms and prism thematic maps.
+At the present time,
+the quality of the maps is suitable for use on a web site,
+but almost certainly not in printed materials.
+The software is US-centric,
+focused on the 48 contiguous states and
+the counties contained in those states.
+
+<p>
+<div style="float:right; margin:0 0 10px 10px;">
+<img src=flat_red_blue.png width=420>
+</div>
+<a href=http://en.wikipedia.org/wiki/Cartogram>According to Wikipedia</a>,
+"a cartogram is a map in which some thematic variable&nbsp;&mdash;
+such as travel time, population, or Gross National Product&nbsp;&mdash;
+is substituted for land area or distance."
+Such maps have become quite popular for summarizing
+the state-by-state results in US Presidential elections
+every four years.
+A red-blue coloring of the contiguous states and Washington, DC
+representing wins for the Republican and Democratic candidates respectively
+on a map scaled to accurately reflect states' physical sizes&nbsp;&ndash;
+I'll use the phrase "flat" map throughout for such a map&nbsp;&ndash;
+makes the 2012 election results look pretty even,
+slightly favoring the Republican candidate.
+(This flat map is an example of a <i>choropleth</i> map,
+a different type of thematic map in which the coloring of subdivisions has meaning.)
+
+<p style="clear:both;">
+<div style="float:right; margin:0 0 10px 10px;">
+<img src=electoral_red_blue.png width=420>
+</div>
+In fact,
+President Obama won reelection in the Electoral College by a margin of 332-206.
+The problem is that much of the red area in the map
+is sparsely populated.
+Those states have very few electoral votes,
+which is what counts.
+A cartogram of the situation can be constructed so that
+the size of each state on the map
+reflects the number of electoral votes that state has.
+Compared to the flat map,
+many of the red states have shrunk, reflecting fewer electoral votes,
+while many of the blue states have expanded, reflecting more votes.
+The changes in Montana and Washington, DC are particularly noticeable.
+In the cartogram,
+those two are close to the same size,
+reflecting that both of them have three electoral votes.
+(In the flat map, DC is a barely visible block dot
+along the Virginia-Maryland border.)
+This red-blue style of cartogram,
+at both the state and county level,
+has become fairly popular after the last few US Presidential elections.
+
+<p style="clear:both;">
+<div style="float:right; margin:10px 0 10px 10px;">
+<img src=federal_holdings2.png width=420></br>
+</div>
+The election cartogram is an example of a <i>contiguous</i> cartogram,
+in which points that touch in the undistorted map
+also touch in the cartogram.
+One of the issues that comes up in some of the things that I write
+is that of federal land holdings in the individual states.
+Within the 48 states I'm using in these examples,
+such land holdings are overwhelmingly located in the western states.
+A contiguous cartogram produces fairly extreme distortion of
+the eastern states and may be difficult to read.
+A <i>non-contiguous</i> cartogram places scaled images within the outlines
+of the subdivisions in a flat map.
+Here, a blue silhouette whose size represents the size of the federal land holdings
+within the outlines of the state.
+
+<p style="clear:both;">
+<div style="float:right; margin:0 0 10px 10px;">
+<img src=federal_holdings3.png width=420>
+</div><br/>
+A related type of map is the <i>prism map</i>.
+The same information on federal land holdings within the individual states
+is shown here as a prism map.
+Each state is represented by a three-dimensional prism.
+The horizontal cross-section of each prism
+matches the outline shape of the state;
+the volume of the prism is proportional to the area of the federal lands.
+The tricky part is producing an attractive view of a three-dimensional object
+suitable for use in a two-dimensional medium.
+
+<p style="clear:both;"></br></br>
+<a href=history.html>Next: Some History</a>
+
+<br/><br/><br/>
+Last updated Feb 28, 2021<br/>
+<script> include("footer.html"); </script>
+
+</div>
+
+</body>
+</html>

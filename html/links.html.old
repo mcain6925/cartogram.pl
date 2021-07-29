@@ -1,0 +1,50 @@
+<html>
+<body>
+<b>Links</b>
+<p>
+The following list contains links to other cartogram-related sites
+of possible interest.
+<ul>
+<li><a href=http://www.worldmapper.org/>Worldmapper</a><br>
+Worldmapper has nearly 700 continuous cartogram maps
+illustrating a vast array of population and other variables.
+In addition to the cartograms,
+Worldmapper provides access to the data used to generate the cartograms,
+including intermediate calculations.
+Sources for the data are also identified.
+Many of the maps are available as PDF posters.<br><br>
+<li><a href=http://www-personal.umich.edu/~mejn/cart/>Mark Newman's cart pages</a><br>
+Mark Newman provides several pages with information about the <i>cart</i> program
+which implements the method described in the paper
+Diffusion-based method for producing density equalizing maps,
+Michael T. Gastner and M. E. J. Newman,
+<i>Proc. Natl. Acad. Sci. USA</i> <b>101</b>,
+7499-7504 (2004).
+Cart is the foundation for the software provided on this site.
+The Worldmapper site uses the same algorithm.<br><br>
+<li><a href=http://scapetoad.choros.ch>ScapeToad</a><br>
+ScapeToad is a Java implementation of the Gastner/Newman algorithm
+together with a graphical user interface.
+ScapeToad works with esri shapefiles.
+Esri is a leading vendor of geographic information system software.
+The shapefile format
+(a "shapefile" is actually three or more related files)
+is regulated by esri and is a (mostly) open specification.
+One of the reasons for the software on this site
+is to avoid some of the complexities of dealing with the shapefile format.<br><br>
+<li><a href=http://trac.osgeo.org/proj/>PROJ.4</a><br>
+PROJ.4 is a collection of cartographic projections software.
+The <i>cs2cs</i> program that is part of the collection
+can be used to convert outline information from one projection to another.
+For example,
+there is lots of map data available with
+coordinates given in latitude and longitude.
+In many cases,
+an alternative such as the Lambert azimuthal equal-area projection
+is preferred
+(the flat map of the US on the introduction page is in that format).
+For simply using the software and outline files on this site,
+you don't have to worry about projections.
+</ul>
+</body>
+</html>

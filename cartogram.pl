@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012-2018 Michael Cain
+# Copyright (C) 2012-2021 Michael Cain
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,22 +27,255 @@ use File::Glob qw(:bsd_glob);
 use List::Util qw(max);
 use Scalar::Util qw(looks_like_number);
 
+
+##################################
+# Lookup hashes for doing various things at the state level
+#  - converting between identifier types
+#  - geographic area values
 #
-# Hash from lookups.pl for converting two-character state abbreviations to FIPS code, or area lookup
-#   if the -area flag gets set
+
+#
+# Numbers that can be used for the area of each of the states
+# Numbers are in thousands of square miles
+# Alaska and Hawaii are not included
+#
+
+my %state_area = (
+	"AL" => 52.4,
+	"AR" => 53.2,
+	"AZ" => 114.0,
+	"CA" => 163.7,
+	"CO" => 104.1,
+	"CT" => 5.5,
+	"DC" => 0.068,
+	"DE" => 2.5,
+	"FL" => 65.7,
+	"GA" => 59.4,
+	"IA" => 56.3,
+	"ID" => 83.6,
+	"IL" => 57.9,
+	"IN" => 36.4,
+	"KS" => 82.3,
+	"KY" => 40.4,
+	"LA" => 51.8,
+	"MA" => 10.6,
+	"MD" => 12.4,
+	"ME" => 35.4,
+	"MI" => 96.7,
+	"MN" => 86.9,
+	"MO" => 69.7,
+	"MS" => 48.4,
+	"MT" => 147.0,
+	"NC" => 53.8,
+	"ND" => 70.7,
+	"NE" => 77.4,
+	"NH" => 9.3,
+	"NJ" => 8.7,
+	"NM" => 121.6,
+	"NV" => 110.6,
+	"NY" => 54.6,
+	"OH" => 44.8,
+	"OK" => 69.9,
+	"OR" => 98.3,
+	"PA" => 46.1,
+	"RI" => 1.5,
+	"SC" => 32.0,
+	"SD" => 77.1,
+	"TN" => 42.1,
+	"TX" => 268.6,
+	"UT" => 84.9,
+	"VA" => 42.8,
+	"VT" => 9.6,
+	"WA" => 71.3,
+	"WI" => 65.5,
+	"WV" => 24.2,
+	"WY" => 97.8,
+);
+
+#
+# Translate spelled-out state names to two-character postal abbreviations
+# Alaska and Hawaii not included
+#
+
+my %abbr_lookup = (
+	"Alabama" =>				"AL",
+	"Arizona" =>				"AZ",
+	"Arkansas" =>				"AR",
+	"California" =>				"CA",
+	"Colorado" =>				"CO",
+	"Connecticut" =>			"CT",
+	"Delaware" =>				"DE",
+	"District of Columbia" =>	"DC",
+	"Florida" =>				"FL",
+	"Georgia" =>				"GA",
+	"Idaho" =>					"ID",
+	"Illinois" =>				"IL",
+	"Indiana" =>				"IN",
+	"Iowa" =>					"IA",
+	"Kansas" =>					"KS",
+	"Kentucky" =>				"KY",
+	"Louisiana" =>				"LA",
+	"Maine" =>					"ME",
+	"Maryland" =>				"MD",
+	"Massachusetts" =>			"MA",
+	"Michigan" =>				"MI",
+	"Minnesota" =>				"MN",
+	"Mississippi" =>			"MS",
+	"Missouri" =>				"MO",
+	"Montana" =>				"MT",
+	"Nebraska" =>				"NE",
+	"Nevada" =>					"NV",
+	"New Hampshire" =>			"NH",
+	"New Jersey" =>				"NJ",
+	"New Mexico" =>				"NM",
+	"New York" =>				"NY",
+	"North Carolina" =>			"NC",
+	"North Dakota" =>			"ND",
+	"Ohio" =>					"OH",
+	"Oklahoma" =>				"OK",
+	"Oregon" =>					"OR",
+	"Pennsylvania" =>			"PA",
+	"Rhode Island" =>			"RI",
+	"South Carolina" =>			"SC",
+	"South Dakota" =>			"SD",
+	"Tennessee" =>				"TN",
+	"Texas" =>					"TX",
+	"Utah" =>					"UT",
+	"Vermont" =>				"VT",
+	"Virginia" =>				"VA",
+	"Washington" =>				"WA",
+	"West Virginia" =>			"WV",
+	"Wisconsin" =>				"WI",
+	"Wyoming" =>				"WY",
+);
+
+#
+# Translate two-character state abbreviations to FIPS code (as a string)
+#
+
+my %state_abbr_to_fips = (
+	"AK" => "02",
+	"AL" => "01",
+	"AR" => "05",
+	"AZ" => "04",
+	"CA" => "06",
+	"CO" => "08",
+	"CT" => "09",
+	"DC" => "11",
+	"DE" => "10",
+	"FL" => "12",
+	"GA" => "13",
+	"HI" => "15",
+	"IA" => "19",
+	"ID" => "16",
+	"IL" => "17",
+	"IN" => "18",
+	"KS" => "20",
+	"KY" => "21",
+	"LA" => "22",
+	"MA" => "25",
+	"MD" => "24",
+	"ME" => "23",
+	"MI" => "26",
+	"MN" => "27",
+	"MO" => "29",
+	"MS" => "28",
+	"MT" => "30",
+	"NC" => "37",
+	"ND" => "38",
+	"NE" => "31",
+	"NH" => "33",
+	"NJ" => "34",
+	"NM" => "35",
+	"NV" => "32",
+	"NY" => "36",
+	"OH" => "39",
+	"OK" => "40",
+	"OR" => "41",
+	"PA" => "42",
+	"RI" => "44",
+	"SC" => "45",
+	"SD" => "46",
+	"TN" => "47",
+	"TX" => "48",
+	"UT" => "49",
+	"VA" => "51",
+	"VT" => "50",
+	"WA" => "53",
+	"WI" => "55",
+	"WV" => "54",
+	"WY" => "56",
+);
+
+#
+# Translate two-character FIPS code to two-character abbreviation
+#
+
+my %state_fips_to_abbr = (
+	"02" => "AK",
+	"01" => "AL",
+	"05" => "AR",
+	"04" => "AZ",
+	"06" => "CA",
+	"08" => "CO",
+	"09" => "CT",
+	"11" => "DC",
+	"10" => "DE",
+	"12" => "FL",
+	"13" => "GA",
+	"15" => "HI",
+	"19" => "IA",
+	"16" => "ID",
+	"17" => "IL",
+	"18" => "IN",
+	"20" => "KS",
+	"21" => "KY",
+	"22" => "LA",
+	"25" => "MA",
+	"24" => "MD",
+	"23" => "ME",
+	"26" => "MI",
+	"27" => "MN",
+	"29" => "MO",
+	"28" => "MS",
+	"30" => "MT",
+	"37" => "NC",
+	"38" => "ND",
+	"31" => "NE",
+	"33" => "NH",
+	"34" => "NJ",
+	"35" => "NM",
+	"32" => "NV",
+	"36" => "NY",
+	"39" => "OH",
+	"40" => "OK",
+	"41" => "OR",
+	"42" => "PA",
+	"44" => "RI",
+	"45" => "SC",
+	"46" => "SD",
+	"47" => "TN",
+	"48" => "TX",
+	"49" => "UT",
+	"51" => "VA",
+	"50" => "VT",
+	"53" => "WA",
+	"55" => "WI",
+	"54" => "WV",
+	"56" => "WY",
+);
+
+#
 # Convert state_area hash to keys based on FIPS rather than abbreviation
 #
 
-use lib '.';
-require "lookups.pl";
-our %state_abbr_to_fips;
-our %state_area;
 foreach my $key (keys %state_area) {
 	if (exists $state_abbr_to_fips{$key}) {
 		$state_area{$state_abbr_to_fips{$key}} = $state_area{$key};
 		delete $state_area{$key};
 	}
 }
+
 
 #
 # Make shape ids consistent
@@ -56,6 +289,7 @@ sub patch_id {
 	$id = "46102" if ($id eq "46113");
 	return $id;
 }
+
 
 ##################################
 # Progress bar code
@@ -105,21 +339,34 @@ sub progress_finish {
 ##################################
 # Initial values for various globals that can be adjusted on the command line, divided into groups
 # Stuff specific to generating maps
+# Projection types:
+#   none - simple latitude and longitude
+#   aea  - Albers Equal Area
+#   laea - Lambert Azimuthal Equal Area
+#   cea  - Cylindrical Equal Area
+#   lcc  - Lambert Conformal Conic
 #
+
 my $generate_flag = 0;
 my $from_shapefile = 0;
 my $center_correction = 0;
 my $lon_scale = 1;
+my %project_hash = (
+	"none" => '$proj_program +proj=latlong +to +proj=$project_type +lat_0=$center_lat +lon_0=$center_lon',
+	"aea"  => '$proj_program +proj=latlong +to +proj=$project_type +lat_1=$min_lat +lat_2=$max_lat +lon_0=$center_lon',
+	"laea" => '$proj_program +proj=latlong +to +proj=$project_type +lat_0=$center_lat +lon_0=$center_lon',
+	"cea"  => '$proj_program +proj=latlong +to +proj=$project_type +lat_ts=$min_lat +lon_0=$center_lon',
+	"lcc"  => '$proj_program +proj=latlong +to +proj=$project_type +lat_0=$center_lat +lat_1=$center_lat +lon_0=$center_lon',
+);
 my $project_type = "aea";
-my %project_hash = ("aea" => 1, "laea" => 1, "none" => 1);
 
 #
 # Stuff mostly specific to contiguous cartograms
 # Flat maps are just contiguous cartograms that skip the density adjustment steps
 # Some of this stuff gets used in other cases, eg, $border_thickness in noncontiguous and prism
 #
-my $map_type = "flat";
 my %map_hash = ("flat" => 1, "contig" => 1, "noncontig" => 1, "prism" => 1);
+my $map_type = "flat";
 my $data_filename = "";
 my $map_filename = "";
 my $image_offset = 50;
@@ -134,8 +381,8 @@ my $background = "white";
 my $cart_program = "cart";
 my $one_color = 0;
 my $adj_outside_density = 1.00;
-my $img_type = "png";
 my %img_hash = ("png" => 1, "jpg" => 1, "gif" => 1);
+my $img_type = "png";
 my $area_flag = 0;
 my $transform = "";
 my $adj_max_flag = 1;
@@ -167,8 +414,8 @@ my $mesh_color = "black";
 #
 # Stuff specific to prism maps
 #
-my $camera_type = "perspective";
 my %camera_hash = ("perspective" => 1, "orthographic" => 1);
+my $camera_type = "perspective";
 my $camera_string = "1200,270,45";
 my $camera_zoom = 45;
 my $povray_width = 1200;
@@ -179,11 +426,13 @@ my $transparency = 0.4;
 my $y_point = 0;
 my $gamma = 1.1;
 
+
 ##################################
 # Global stuff that's not set from the command line
 # All here in one place to avoid declaring names multiple times
 # Really need to do better scoping one of these days
 #
+
 my $image;				# GD::Image for drawing the flat, contiguous, and non-contiguous cartograms
 my $image_scale;
 my $image_width;
@@ -211,6 +460,7 @@ my %district_area = ();	# Hash that will be filled with district land area if ne
 my $proj_program;		# Cs2cs, specific for platform
 my $interp_program;		# Interp, specific for platform
 my $ray_program;		# POV-Ray, specific for platform
+my $null_name;			# Name of the null file, either /dev/null or nul: depending on OS
 my @poly_list1 = ();	# Lists of polygons and colors used for contiguous video sequence generation
 my @poly_list2 = ();
 my @poly_list3 = ();
@@ -251,6 +501,7 @@ for (my $i=0; $i<@noncontig_hints; $i+=3) {
 # The hash values are replaced with a GD index if we're doing anything but prism map
 # Exactly what gets put in there varies by the type of map
 #
+
 my %named_colors = (
 	"white"     => [255, 255, 255, 1.0, 1.0, 1.0],
 	"black"     => [0, 0, 0, 0.0, 0.0, 0.0],
@@ -264,12 +515,13 @@ my %named_colors = (
 	"dark_gray" => [63, 63, 63, 0.3, 0.3, 0.3],
 );
 
+
 ##################################
 # The "main" program runs from here to the exit statement
 # Getting started stuff that's common across all the map types
 # Block of code for each of the four map types
 # Both contiguous and noncontiguous will define $image as a GD image, which should be dumped to file
-# Tidy up by unlinking various scratch files
+# Tidy up by unlinking various scratch files, unless instructed to keep them
 #
 
 print STDERR "Tag            Value\n";
@@ -281,6 +533,8 @@ print STDERR "--------------------------------\n";
 &read_data_file();
 &apply_transform() if ($transform);
 &maps_start() if ($generate_flag);
+die "Error          map file $map_filename doesn't exist\n" if ($map_filename and ! -e $map_filename);
+die "Error          overlay file $overlay_map doesn't exist\n" if ($overlay_map and ! -e $overlay_map);
 &first_map_pass();
 
 if ($map_type eq "flat") {
@@ -349,9 +603,10 @@ if ($unlink_flag) {
 exit;
 
 #
-# Read county areas from the bulk data file
+# Read county and/or district areas from the bulk data file
 # Called only if the -area command-line flag was set
 #
+
 sub read_areas {
 	my @temp;
 	open INPUT, "<bulk_data/gaz.data" or die "Error          could not open bulk data file bulk_data/gaz.data\n";
@@ -372,29 +627,25 @@ sub read_areas {
 #
 # OS specific preparations
 # Basically, setting things up for the external programs that get run
+# VERY specific to how things were installed on my machines
 #
+
 sub os_specific_stuff {
 	printf STDERR "Progress       operating system is $^O\n";
-	if ($^O eq "darwin") {
-		$proj_program = getcwd() . "/bin/cs2cs";
-		$ENV{"PROJ_LIB"} = getcwd() . "/proj";
-		$cart_program = getcwd() . "/bin/" . $cart_program;
-		$interp_program = getcwd() . "/bin/interp";
-		$ray_program = getcwd() . "/bin/povray +L./bin +Icartogram.pov +V +W$povray_width +H$povray_height +A +Q11 -D";
-	}
 	if ($^O eq "linux") {
-		$proj_program = getcwd() . "/bin/cs2cs";
-		$ENV{"PROJ_LIB"} = getcwd() . "/proj";
-		$cart_program = getcwd() . "/bin/" . $cart_program;
-		$interp_program = getcwd() . "/bin/interp";
-		$ray_program = getcwd() . "/bin/povray +L./bin +Icartogram.pov +V +W$povray_width +H$povray_height +A +Q11 -D";
+		$null_name = "/dev/null";
+		$proj_program = "/usr/bin/cs2cs";
+		$cart_program = getcwd() . "/cart/" . $cart_program;
+		$interp_program = getcwd() . "/cart/interp";
+		$ray_program = "/usr/bin/povray +L./bin +Icartogram.pov +V +W$povray_width +H$povray_height +A +Q11 -D";
 	}
 	if ($^O eq "MSWin32") {
-		$proj_program = getcwd() . "/bin/cs2cs.exe";
-		$ENV{"PROJ_LIB"} = getcwd() . "/proj";
-		$cart_program = getcwd() . "/bin/" . $cart_program . ".exe";
-		$interp_program = getcwd() . "/bin/interp.exe";
-		$ray_program = getcwd() . "/bin/megapov.exe +L./bin +Icartogram.pov +V +W$povray_width +H$povray_height +A +Q9 +FN -D";
+		$null_name = "nul:";
+		$cart_program = getcwd() . "/cart/" . $cart_program . ".exe";
+		$interp_program = getcwd() . "/cart/interp.exe";
+	}
+	if ($^O eq "darwin") {
+		$null_name = "/dev/null";
 	}
 }
 
@@ -653,6 +904,9 @@ sub process_args {
 			$temp = shift @ARGV;
 			@temp = split ",", $temp;
 			if (@temp == 2) {
+				if ($temp[0] <= 0 or $temp[0] >= 1 or $temp[1] <= 0 or $temp[1] > 100) {
+					print STDERR "Warning        prune string should look something like '0.3,30'\n";
+				}
 				@prune_values = @temp;
 			}
 			else {
@@ -753,8 +1007,9 @@ sub looks_like_color {
 	return 0;
 }
 
+
 ##################################
-# Generic first pass over the data file
+# Generic first pass over the data and map files
 # Collects identifiers for the map polygons, stores density information
 # Four forms are accepted:
 #   - four items  => identifier, area, theme value, color
@@ -920,7 +1175,6 @@ sub first_map_pass {
 
 ##################################
 # Contiguous cartogram routines
-#
 # Set up all of the GD stuff that gets used for drawing for flat, contiguous, and noncontiguous cartograms
 # While there's a bunch of common stuff for flat, contig, and noncontig, there's also some specific stuff
 # In the contig/flat case, note the stuff for mesh clipping
@@ -1348,7 +1602,7 @@ sub clip_mesh {
 
 #
 # Overlay pass
-# Well, two passes actually, but all rolled together here
+# Well, two passes actually, but both while loops are in this one routine
 #
 
 sub overlay_pass {
@@ -1541,7 +1795,7 @@ sub video_pass {
 	$temp = sprintf("%dx%d", 2*int($1/2.0), 2*int($2/2.0));
 	unlink("cartogram.mp4");
 	print STDERR "Progress       running ffmpeg\n";
-	$ff_cmd = sprintf "ffmpeg -i video/frame%%03d.png -vf scale=%s,setsar=1:1 -pix_fmt yuv420p cartogram.mp4 >/dev/null 2>/dev/null", $temp;
+	$ff_cmd = sprintf "ffmpeg -i video/frame%%03d.png -vf scale=%s,setsar=1:1 -pix_fmt yuv420p cartogram.mp4 >%s 2>%s", $temp, $null_name, $null_name;
 	system($ff_cmd);
 }
 
@@ -1744,18 +1998,16 @@ sub noncontig_overlay {
 ##################################
 # Map generation stuff here
 # Shapefiles that start with cb_ obtained from the US Census Bureau
+# Base_ files exist because it's simpler to use them than the shapefiles
 # External cs2cs program from PROJ.4 is assumed
 #
 
 sub maps_start {
-	my $mesh_flag;
-	my $temp;
+	my $flag;
 
 	printf STDERR "Progress       generating maps\n";
 	chdir("generate");
-	$mesh_flag = 0;
-	if (0 < scalar keys %county_fips) {
-		$mesh_flag = 1;
+	if (scalar keys %county_fips) {
 		if ($from_shapefile) {
 			maps_generate("cb_2016_us_county_20m", "counties", $mesh_flag);
 		}
@@ -1763,8 +2015,7 @@ sub maps_start {
 			maps_generate("base_counties", "counties", $mesh_flag);
 		}
 	}
-	if (0 < scalar keys %district_fips) {
-	 	$mesh_flag = 1;
+	if (scalar keys %district_fips) {
 		if ($from_shapefile) {
 			maps_generate("cb_2017_us_cd115_20m", "districts", $mesh_flag);
 		}
@@ -1773,14 +2024,15 @@ sub maps_start {
 		}
 	}
 	if (0 < scalar keys %state_fips) {
-		$mesh_flag = 1;
-		$mesh_flag = 0 if (scalar keys %county_fips);
-		$mesh_flag = 0 if (scalar keys %district_fips);
+		$flag = 1;
+		$flag = 0 if (scalar keys %county_fips);
+		$flag = 0 if (scalar keys %district_fips);
+		$flag = 0 if (!$mesh_flag);
 		if ($from_shapefile) {
-	 		maps_generate("cb_2016_us_state_20m", "states", $mesh_flag);
+	 		maps_generate("cb_2016_us_state_20m", "states", $flag);
 		}
 		else {
-			maps_generate("base_states", "states", $mesh_flag);
+			maps_generate("base_states", "states", $flag);
 		}
 	}
 	chdir("..");
@@ -1821,7 +2073,6 @@ sub maps_generate {
 #
 # Extract polygons
 #
-
 	if ($from_shapefile) {
 		print STDERR "Progress       extracting from shapefile root $root_name\n";
 		%places = &from_shapefile($root_name, $output_name);
@@ -1832,27 +2083,36 @@ sub maps_generate {
 	}
 
 #
-# If necessary, prune away small polygons
-# This is somewhat experimental
+# Prune away small polygons if requested
+# The %places hash contains references to arrays of polygons, one per named place from the data file
+# Each polygon is a reference to an array of points
+# Places where the description is only a single polygon are never pruned
 #
 	if (@prune_values) {
+		my $prune_count = 0;
 		my $total_points;
+		my $count;
 		print STDERR "Progress       pruning small polygons\n";
 		foreach $i (keys %places) {
 			@polys = @{ $places{$i} };
 			next if (@polys == 1);
 			$total_points = 0;
 			foreach $j (@polys) {
-				@points = @{ $j };
-				$total_points += scalar @points;
+				$total_points += scalar @{ $j };
 			}
 			@temp = ();
 			foreach $j (@polys) {
-				@points = @{ $j };
-				push @temp, $j if (@points > $prune_values[0] * $total_points or @points > $prune_values[1]);
+				$count = scalar @{ $j };
+				if ($count > $prune_values[0] * $total_points or $count > $prune_values[1]) {
+					push @temp, $j;
+				}
+				else {
+					$prune_count += 1;
+				}
 			}
 			$places{$i} = [@temp];
 		}
+		print STDERR "Progress       pruned $prune_count polygons\n";
 	}
 
 #
@@ -1865,10 +2125,10 @@ sub maps_generate {
 		foreach $j (@polys) {
 			@points = @{ $j };
 			foreach $k (@points) {
-				$min_lon = ($k->[0] < $min_lon) ? $k->[0] : $min_lon;
-				$max_lon = ($k->[0] > $max_lon) ? $k->[0] : $max_lon;
-				$min_lat = ($k->[1] < $min_lat) ? $k->[1] : $min_lat;
-				$max_lat = ($k->[1] > $max_lat) ? $k->[1] : $max_lat;
+				$min_lon = $k->[0]  if ($k->[0] < $min_lon);
+				$max_lon = $k->[0]  if ($k->[0] > $max_lon);
+				$min_lat = $k->[1]  if ($k->[1] < $min_lat);
+				$max_lat = $k->[1]  if ($k->[1] > $max_lat);
 			}
 		}
 	}
@@ -1881,7 +2141,9 @@ sub maps_generate {
 		open OUTPUT, ">temp1.numbers";
 	}
 	else {
-		open OUTPUT, "|$proj_program +proj=latlong +to +proj=$project_type +lat_0=$center_lat +lon_0=$center_lon >temp1.numbers";
+		my $cmd = $project_hash{$project_type};
+		$cmd =~ s/(\$\w+)/$1/gee;
+		open OUTPUT, "| $cmd >temp1.numbers";
 	}
 	foreach $i (keys %places) {
 		@polys = @{ $places{$i} };
@@ -1943,7 +2205,9 @@ sub maps_generate {
 			open OUTPUT, ">temp1.numbers";
 		}
 		else {
-			open OUTPUT, "|$proj_program +proj=latlong +to +proj=$project_type +lat_0=$center_lat +lon_0=$center_lon >temp1.numbers";
+			my $cmd = $project_hash{$project_type};
+			$cmd =~ s/(\$\w+)/$1/gee;
+			open OUTPUT, "| $cmd >temp1.numbers";
 		}
 		print STDERR "Progress       latitude range " . (join " ", ($min_lat, $max_lat)) . "\n";
 		print STDERR "Progress       longitude range " . (join " ", ($min_lon, $max_lon)) . "\n";
@@ -2346,7 +2610,7 @@ EOT
 	system $ray_program;
 	if ($video_string eq "grow" or $video_string eq "rotate") {
 		unlink("cartogram.mp4");
-		$temp = sprintf "ffmpeg -i video/frame%%03d.png -pix_fmt yuv420p cartogram.mp4 >/dev/null 2>/dev/null";
+		$temp = sprintf "ffmpeg -i video/frame%%03d.png -pix_fmt yuv420p cartogram.mp4 >%s 2>%s", $null_name, $null_name;
 		print STDERR "Progress       running ffmpeg\n";
 		system($temp);
 	}

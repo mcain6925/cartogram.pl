@@ -1,0 +1,7 @@
+-type prism
+-data examples/holdings.data
+-generate
+-prune 0.3,30
+-map generate/states.map
+-thick 0.75
+-ypoint 150

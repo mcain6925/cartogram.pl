@@ -1,0 +1,12 @@
+-type prism
+-width 1800
+-height 1200
+-data examples/great_plains.data
+-generate
+-prune 0.3,30
+-map generate/counties.map
+-thick 0.75
+-overlay generate/states.map
+-overlay_thick 1.5
+-camera 1300,225,45
+-ypoint 100

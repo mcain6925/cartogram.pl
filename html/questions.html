@@ -1,0 +1,88 @@
+<html>
+<meta charset="UTF-8">
+<head>
+<title>Cartogram Pages - Questions</title>
+<link rel="stylesheet" type="text/css" href="cartogram.css">
+<link href='https://fonts.googleapis.com/css?family=Noto+Serif:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href='electoral_red_blue.png' rel='icon' type='image/png'>
+<script>
+function include(file) {
+	var request;
+	request = new XMLHttpRequest();
+	request.open("GET", file, false);
+	request.send();
+	document.write(request.responseText);
+}
+</script>
+</head>
+<body>
+
+<div id="header">
+<script>
+include("header.html");
+</script>
+<p style="margin:0 0 0 10px;">
+<hr>
+</div>
+
+<div id="leftnavigation">
+<script>
+include("left.html");
+</script>
+</div>
+
+<div id="content">
+<b><u>Answers to Obvious Questions</u></b>
+<p>
+So, some answers to the obvious questions.
+<ol>
+<li>
+<b>Where are Alaska and Hawaii?</b>
+<br><br>
+The easy answer is that for my immediate purposes,
+I don't care about Alaska and Hawaii.
+Somewhat more seriously,
+those two states represent a problem for a cartogram.
+First,
+in even an otherwise undistorted map like the first one on this page
+Alaska and Hawaii are seldom shown to scale.
+Hawaii doesn't total a lot of area but
+the island chain is scattered over a length of 1500 miles,
+about the distance from the middle of Iowa to Los Angeles.
+And Alaska is just enormous.
+When the initial map isn't showing those states to scale,
+it may be difficult to recognize whether their areas
+have changed or not
+in the cartogram.
+<br><br>
+<li>
+<b>Are cartograms good for everything?</b>
+<br><br>
+No.
+The cartogram below is based on listing the 48 states
+in alphabetical order using their two-character mailing abbreviation,
+then assigning them a value between 51 and 145.
+States that fall early in the list are small and light-colored,
+states that fall near the end are larger and darker.
+It doesn't <i>mean</i> anything.
+<p>
+<img src=alphabetical.png width=500>
+<br><br>
+<li>
+<b>How'd you do it, and can I do it the same way?</b>
+<br><br>
+There are a number of commercial and free mapping tools that either
+do cartograms natively or
+support plug-ins of some sort that can do the job.
+When I got more serious about wanting to do cartograms,
+I looked at some of the free ones and decided
+that I didn't want to use a GUI.
+I'm an old-school command-line kind of guy for the most part.
+<p style="clear:both;">
+<br>
+<a href=template.html>Next: To Do List</a>
+</div>
+</div>
+
+</body>
+</html>

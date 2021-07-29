@@ -1,0 +1,8 @@
+-type contig
+-data examples/great_plains.data
+-generate
+-prune 0.3,30
+-mesh_size 75
+-map generate/counties.map
+-no_outline
+-mesh generate/counties.mesh

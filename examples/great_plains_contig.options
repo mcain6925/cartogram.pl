@@ -1,0 +1,8 @@
+-type contig
+-scale 1.5
+-cart2v
+-data examples/great_plains.data
+-generate
+-prune 0.3,30
+-map generate/counties.map
+-overlay generate/states.map

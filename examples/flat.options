@@ -1,0 +1,4 @@
+-type flat
+-data examples/holdings.data
+-generate
+-map generate/states.map

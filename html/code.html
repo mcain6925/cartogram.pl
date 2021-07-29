@@ -1,0 +1,43 @@
+<html>
+<head>
+<title>Cartogram Pages</title>
+<link rel="stylesheet" type="text/css" href="cartogram.css">
+<link href='electoral_red_blue.png' rel='icon' type='image/png'>
+</head>
+<body>
+
+<div id="header">
+<script>
+var xmlHttp = null;
+xmlHttp = new XMLHttpRequest();
+xmlHttp.open("GET", "header.html", false);
+xmlHttp.send(null);
+document.write(xmlHttp.responseText);
+</script>
+<p style="margin:0 0 0 10px;">
+<hr>
+</div>
+
+<div id="leftnavigation">
+<script>
+var xmlHttp = null;
+xmlHttp = new XMLHttpRequest();
+xmlHttp.open("GET", "left.html", false);
+xmlHttp.send(null);
+document.write(xmlHttp.responseText);
+</script>
+</div>
+
+<div id="content">
+<b><u>Code</u></b>
+<p>
+Temporary place holder for code stuff.
+<p>
+<div align=right>
+<br><br>
+<a href=data.html>Next: Data</a>
+</div>
+</div>
+
+</body>
+</html>

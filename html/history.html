@@ -1,0 +1,330 @@
+<html>
+<meta charset="UTF-8">
+<head>
+<title>Cartogram Pages - History</title>
+<link rel="stylesheet" type="text/css" href="cartogram.css">
+<link href='https://fonts.googleapis.com/css?family=Noto+Serif:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href='electoral_red_blue.png' rel='icon' type='image/png'>
+<script>
+function include(file) {
+	var request;
+	request = new XMLHttpRequest();
+	request.open("GET", file, false);
+	request.send();
+	document.write(request.responseText);
+}
+</script>
+</head>
+<body>
+
+<div id="header">
+<script> include("header.html"); </script>
+<p style="margin:0 0 0 10px;">
+<hr>
+</div>
+
+<div id="leftnavigation">
+<script> include("left.html"); </script>
+</div>
+
+<div id="content">
+<b><u>Some History</u></b>
+<p>
+<div style="float:right; padding:0 0 10px 10px;">
+<img src="federal_holdings1.png" width=450>
+</div>
+In November 2012 I decided that I wanted to generate cartograms.
+Specifically,
+I wanted to generate the contiguous cartogram shown to the right,
+where the size of each state reflects the acreage of land owned by the federal government,
+to illustrate how disproportionately policy decisions about those land holdings
+affected western states.
+The context in which I was writing at the time
+confined my interest to the 48 contiguous states,
+occasionally including the District of Columbia.
+Alaska and Hawaii were outliers that I still ignore.
+<p>
+A couple of days poking around on the internet
+revealed a few things:
+<ul>
+<li>
+There was existing software for generating cartograms.
+<li>
+Some of it was in the form of free add-ons for commercial packages.
+The cost of the commercial packages was
+larger than the household research budget was comfortable with&nbsp;<a href="#fn1" id="ref1">[1]</a>.
+<li>
+Some of the available code wouldn't run on my Mac.
+<li>
+There was at least one free standalone package
+written in Java that would run on my Mac.
+I disliked its graphical user interface and slow response.
+(That should not be construed as a slight on the developers or their code;
+it just wasn't right for <i>me</i>.)
+<li>
+There was at least one of the better algorithms
+for contiguous cartograms
+with source code available from the original authors
+that "just" needed a wrapper to make use of it.
+</ul>
+I decided to take a shot at writing a wrapper.
+How hard could it be?
+<p>
+The first thing I needed was map data.
+A map like I wanted was just a set of polygons.
+Wikipedia to the rescue!
+Tucked away in the Wikimedia Commons
+was an SVG (Scalable Vector Graphics) file that provided polygon outlines
+for <a href="https://commons.wikimedia.org/wiki/File:Blank_US_Map_(states_only).svg">the 50 US states</a>.
+I had used SVG on a couple of other occasions
+so knew that extracting the outlines only took a small chunk of Perl code.
+I created my own very simple format for a map file
+anticipating that I might want to convert from other sources in the future.
+It was intended to be a placeholder,
+but I'm still using it today.
+<p>
+I needed to draw the polygons, both outlines and filled.
+The <a href="https://libgd.github.io/">GD Graphics Library</a> has been around for a long time.
+GD had the advantage that it is oriented towards
+drawing in memory and then rendering to a file;
+newer alternatives were focused much more towards
+rendering in real time in a video frame buffer.
+GD is written in C, but
+people have written bindings to the library
+for many other programming languages.
+I do most of my programming in Perl&nbsp;<a href="#fn2" id="ref2">[2]</a>,
+and GD.pm was readily available.
+When I drew the polygons from the Wikimedia file
+there were some problems with the data.
+I ended up with a "check outlines" program that did
+simple drawings of specified subsets of the map data
+so that I could identify and fix problems.
+<p>
+For doing the contiguous cartogram transformation,
+I chose the Gastner and Newman gas-diffusion density-equalization method&nbsp;<a href="#fn3" id="ref3">[3]</a>.
+The results were attractive and Mark Newman was distributing <a href="http://www-personal.umich.edu/~mejn/cart/">open source code</a>.
+The <i>cart</i> program took an initial density file and produced
+an intermediate result&nbsp;&ndash;
+a representation of the transform from initial density to equalized density.
+The <i>interp</i> program used that intermediate file and a list of point coordinates&nbsp;&ndash;
+say, the points defining a polygon&nbsp;&ndash;
+and produced a list of the transformed coordinates.
+Draw the transformed polygons and the result is a contiguous cartogram.
+It wasn't quite as simple as that sounds.
+There were,
+for example,
+the usual kinds of problems with exactly how
+the different bits of software wanted their data to be formatted.
+Still,
+after a couple of weeks of part-time effort,
+I could draw a rough version of the cartogram shown above.
+
+<p style="clear:both;">
+<div style="float:right; padding:0 0 10px 10px;">
+<img src="hypothetical.png" width=450><br>
+<img src="underneath.png" width=450>
+</div>
+After that,
+I kept finding other things that I wanted or needed to add.
+The SVG maps from Wikimedia had additional problems that came to light
+when I was working on a piece involving a hypothetical 51st state
+carved out of Colorado, Kansas, and Nebraska&nbsp;<a href="#fn4" id="ref4">[4]</a>.
+The polygons simply weren't very accurate creating odd empty spots in the cartograms.
+Much more accurate polygons were
+available from ESRI and <a href=ftp://ftp.igsb.uiowa.edu/gis_library/USA/us_counties.htm">other sources</a>
+derived from US Census Bureau data.
+(Due to potential licensing issues, I now use the Census Bureau's data directly.)
+All of that data is stored in shapefile format.
+The <a href="http://search.cpan.org/~jasonk/Geo-ShapeFile-2.52/lib/Geo/ShapeFile.pm">Geo::ShapeFile</a> Perl module
+made it straightforward to read out the highly detailed polygon data.
+The coordinates were in latitude and longitude,
+which was good because state and county outlines
+could overlay one another.
+It was bad because,
+used directly as x-y coordinates,
+they resulted in a map that was already distorted
+in terms of shape and area
+(top figure to the right; Colorado is much more nearly square than that).
+<p>
+The formal study of map projections&nbsp;&ndash;
+representing the surface of a sphere, or part of that surface, on a piece of paper&nbsp;&ndash;
+is a very old subject,
+going back centuries.
+The <a href="http://proj.org/">PROJ</a> project provided the open source program <i>cs2cs</i>
+that will translate from one coordinate system to another for
+almost every projection system known
+(or at least those in somewhat common usage).
+The <i>cs2cs</i> program made it possible to take the latitude-longitude data
+extracted from the shapefile and
+produce nicely oriented maps using an equal-area projection
+(second figure down).
+<p>
+Extreme distortion in some cartograms created its own problems.
+In particular,
+many of the lines looked pretty ratty.
+Solving that required a combination of
+adding intermediate points along the edges of the polygons and
+finding ways to get around the GD library's anti-aliasing restrictions.
+By this point there were lots of picky little details
+about which outlines to use where,
+what colors,
+the thickness of the lines,
+etc.
+The wrapper was accepting a lot of command-line options
+in order to deal with those.
+It still does,
+although it can read the options from a file
+in addition to any specified on the command line.
+The resulting cartograms seemed to be reasonably attractive
+even in extreme cases
+(third figure down).
+<p>
+Counties,
+particularly in the coastal states of the US,
+suffer from irregular shapes and sizes.
+Some western counties are larger than some eastern states.
+There is lots of variation even within states:
+California's largest county is almost 500 times the area of its smallest county.
+For some purposes,
+replacing county outlines with a uniform mesh
+(sometimes called a grid in the literature)
+provided more useful results.
+Getting a smooth rendition of the lines
+meant splines rather than line segments;
+the <a href="http://search.cpan.org/~lds/GD-2.18/GD/Polyline.pm">GD::Polyline</a> module added a nice spline capability
+to the GD library.
+The result is shown in the fourth figure down.
+<p>
+Sometimes,
+particularly where there are extreme differences in density,
+cartograms are difficult to read to the point that
+they become unuseful.
+Prism maps are an alternative.
+The same basic approach&nbsp;&ndash;
+let the wrapper generate do something fairly easy and
+have an existing piece of software do the heavy lifting&nbsp;&ndash;
+made it straightforward to add simple prism maps.
+In this case,
+the heavy lifting was done by <a href="http://www.povray.org/">POV-Ray</a>,
+an open source ray-tracing 3D renderer&nbsp;<a href="#fn5" id="ref5">[5]</a>.
+3D rendering opens up a whole new set of parameters to play with:
+camera and light placement,
+transparency of objects,
+etc
+(fifth figure).
+Those can produce visually interesting results.
+The sixth of the several images shows an example,
+with the camera positioned near the base on which the prisms rest,
+looking slightly north of due west,
+Kansas City's suburbs are in purple along the near edge.
+Omaha and it's suburbs are in green.
+Wichita is a bit farther west,
+still in purple, and
+the Front Range urban corridor in Colorado is towering in the distance,
+hundreds of miles away,
+in red.
+<p>
+The difficulties aren't just a matter of drawing the maps.
+I think everyone with any experience that I've discussed the problems with
+would agree with the statement,
+"Mapping is straightforward; data is hard."
+Just matching up identifiers can present problems.
+Most of my early cartograms used Wikipedia data with
+states identified by postal abbreviations.
+County-level data was identified by name.
+This became a problem when I needed to combine multiple data sources.
+The easiest common identification scheme is FIPS codes
+(Federal Information Processing Standards).
+Even then there are problems.
+South Dakota&nbsp;&ndash; fairly recently as these things go&nbsp;&ndash;
+changed a county name, so the federal government changed the county's FIPS code.
+The wrapper tries to catch this and change everything to the current code.
+<p>
+Preparing images for actual use required standard sorts of manipulation:
+resizing, cropping, pasting things together either vertically or horizontally, etc.
+Being a command-line sort of guy,
+I used the <a href="http://netpbm.sourceforge.net/">NetPBM package</a>
+which provides scriptable routines for most image manipulations.
+Releasing code into the wild requires some sort of documentation,
+a task I often dread.
+I've lost track of the number of times I've said to myself
+that the code was complete enough to make public,
+only to delay yet again.
+<p>
+Things didn't really happen in exactly 
+the order described above,
+of course.
+As with most unplanned personal projects,
+things got added when they become desirable,
+and problems got fixed when they got discovered
+(or became obnoxious enough).
+The wrapper is,
+as I write this,
+about 2700 lines of Perl
+(including comments and vertical white space).
+About 2300 lines of that is real code;
+the remainder is a collection of look-up tables
+with static information that has been useful from time to time.
+An example of that kind of information is a Perl hash that converts
+two-character standard state abbreviations into the corresponding FIPS code
+(eg, from Florida's "FL" to "12").
+The code isn't particularly well structured.
+The style isn't particularly consistent throughout.
+(What? Your coding style doesn't change at all over nine years?)
+A serious Perl stylist would probably be appalled
+by some of my abuses of the language,
+regardless of the Perl slogan that "There's more than one way to do it".
+<p style="clear:both;">
+<hr style="width:200px; margin:0px;">
+<p>
+<span id="fn1">[1]</span>
+One of the things that I frequently say about being retired:
+the upside is that I can choose the questions I want to study and
+how to structure the research;
+the downside is that funding is considerably more difficult.
+<a href="#ref1">&#8617;</a>
+<p>
+<span id="fn2">[2]</span>
+Mostly for historical reasons.
+I have also done recent projects in Python and JavaScript,
+but for (what I think will be) little projects
+I just automatically reach for Perl.
+<a href="#ref2">&#8617;</a>
+<p>
+<span id="fn3">[3]</span>
+"Diffusion-based method for producing density equalizing maps,"
+Michael T. Gastner and M. E. J. Newman,
+<i>Proc. Natl. Acad. Sci. USA</i> <b>101</b>,
+7499-7504 (2004).
+<a href="#ref3">&#8617;</a>
+<p>
+<span id="fn4">[4]</span>
+There really was a 51st State movement in Colorado.
+They were,
+and perhaps still are,
+a registered 501(c) nonprofit organization so that
+donations were tax deductible and
+they could legally lobby the state legislature.
+<a href="#ref4">&#8617;</a>
+<p>
+<span id="fn5">[5]</span>
+Somewhat embarrassingly,
+I found POV-Ray when I was having trouble finding
+contemporary software that I thought would meet my needs&nbsp;&ndash;
+like the drawing libraries, the emphasis is on fast rendering to a frame buffer&nbsp;&ndash;
+and asked myself the question,
+"What software would I have used if I were doing this 20 years ago?"
+<a href="#ref5">&#8617;</a>
+
+<p style="clear:both;">
+<br>
+<a href=example.html>Next: A Small Example</a>
+
+<br/><br/><br/>
+Last updated Jun 28, 2021<br/>
+<script> include("footer.html"); </script>
+
+</div>
+
+</body>
+</html>
